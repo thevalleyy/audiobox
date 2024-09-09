@@ -7,7 +7,9 @@
 #include "Utils.h"
 
 // Processes HTML files in order to replace variables.
-String processor(const String& var) {
+String
+processor(const String& var)
+{
     if (var == "CURRENT_SSID") {
         Preferences prefs;
         prefs.begin(APP_NAME, false);
@@ -43,25 +45,30 @@ String processor(const String& var) {
 }
 
 class CaptiveRequestHandler : public AsyncWebHandler {
-   public:
-    CaptiveRequestHandler() {}
-    virtual ~CaptiveRequestHandler() {}
+public:
+    CaptiveRequestHandler() { }
+    virtual ~CaptiveRequestHandler() { }
 
-    bool canHandle(AsyncWebServerRequest* request) {
+    bool canHandle(AsyncWebServerRequest* request)
+    {
         // request->addInterestingHeader("ANY");
         return true;
     }
 
-    void handleRequest(AsyncWebServerRequest* request) {
-        // AsyncResponseStream* response = request->beginResponseStream("text/html");
-        // response->print("<!DOCTYPE html><html><head><title>Captive Portal</title></head><body>");
-        // response->printf("<p>For %s setup, please visit <a href='http://%s'>this link</a></p>", APP_NAME, WiFi.softAPIP().toString().c_str());
+    void handleRequest(AsyncWebServerRequest* request)
+    {
+        // AsyncResponseStream* response =
+        // request->beginResponseStream("text/html"); response->print("<!DOCTYPE
+        // html><html><head><title>Captive Portal</title></head><body>");
+        // response->printf("<p>For %s setup, please visit <a href='http://%s'>this
+        // link</a></p>", APP_NAME, WiFi.softAPIP().toString().c_str());
         // response->print("</body></html>");
         // request->send(response);
     }
 };
 
-void handle_wifi_test(AsyncWebServerRequest* request) {
+void handle_wifi_test(AsyncWebServerRequest* request)
+{
     connect_wifi(true);
 
     // reload the page so we can see the status update
@@ -69,15 +76,21 @@ void handle_wifi_test(AsyncWebServerRequest* request) {
 }
 
 // Handler for /exit
-void handle_exit(AsyncWebServerRequest* request) {
+void handle_exit(AsyncWebServerRequest* request)
+{
     print("Rebooting...\n");
-    event_t e = {.event_type = EVENT_REBOOT};
+    event_t e = { .event_type = EVENT_REBOOT };
     eh.emit(e);
-    request->send(SPIFFS, "/index.html", String(), false, processor);  // send user back home
+    request->send(SPIFFS,
+        "/index.html",
+        String(),
+        false,
+        processor); // send user back home
 }
 
 // Handler for /wifi_manual
-void handle_wifi_manual(AsyncWebServerRequest* request) {
+void handle_wifi_manual(AsyncWebServerRequest* request)
+{
     int n_params = request->params();
 
     char ssid[CLI_MAX_CHARS];
@@ -97,7 +110,8 @@ void handle_wifi_manual(AsyncWebServerRequest* request) {
 
     // check that we got valid non-zero length entries
     if (strlen(ssid) && strlen(pass)) {
-        WiFi.disconnect();  // disconnect in case we were previously connected to another network
+        WiFi.disconnect(); // disconnect in case we were previously connected to
+                           // another network
 
         Preferences prefs;
         prefs.begin(APP_NAME, false);
@@ -111,7 +125,8 @@ void handle_wifi_manual(AsyncWebServerRequest* request) {
 }
 
 // Handler for /spotify_client
-void handle_spotify_client(AsyncWebServerRequest* request) {
+void handle_spotify_client(AsyncWebServerRequest* request)
+{
     int n_params = request->params();
 
     char client_id[CLI_MAX_CHARS];
@@ -147,18 +162,20 @@ void handle_spotify_client(AsyncWebServerRequest* request) {
     request->send(SPIFFS, "/spotify.html", String(), false, processor);
 }
 
-void handle_spotify_account(AsyncWebServerRequest* request) {
+void handle_spotify_account(AsyncWebServerRequest* request)
+{
     char auth_url[HTTP_MAX_CHARS];
     get_spotify_auth_url(auth_url);
 
     print("%s\n", auth_url);
     // Send user to the authorization url
-    AsyncWebServerResponse* response = request->beginResponse(303);  // HTTP SEE OTHER, forces browser to GET
+    AsyncWebServerResponse* response = request->beginResponse(303); // HTTP SEE OTHER, forces browser to GET
     response->addHeader("Location", auth_url);
     request->send(response);
 }
 
-void handle_spotify_auth(AsyncWebServerRequest* request) {
+void handle_spotify_auth(AsyncWebServerRequest* request)
+{
     int n_params = request->params();
 
     for (int i = 0; i < n_params; i++) {
@@ -166,7 +183,7 @@ void handle_spotify_auth(AsyncWebServerRequest* request) {
 
         if (p->name() == "code") {
             if (get_and_save_spotify_refresh_token(p->value().c_str())) {
-                ready_to_set_spotify_user = true;  // flag to main thread
+                ready_to_set_spotify_user = true; // flag to main thread
             }
         }
     }
@@ -175,23 +192,30 @@ void handle_spotify_auth(AsyncWebServerRequest* request) {
     request->send(SPIFFS, "/spotify.html", String(), false, processor);
 }
 
-void handle_change_mode(AsyncWebServerRequest* request) {
-    button_event_t button_event = {.id = PIN_BUTTON_MODE, .state = ButtonFSM::MOMENTARY_TRIGGERED};
-    event_t e = {.event_type = EVENT_BUTTON_PRESSED, {.button_info = button_event}};
+void handle_change_mode(AsyncWebServerRequest* request)
+{
+    button_event_t button_event = { .id = PIN_BUTTON_MODE,
+        .state = ButtonFSM::MOMENTARY_TRIGGERED };
+    event_t e = { .event_type = EVENT_BUTTON_PRESSED,
+        { .button_info = button_event } };
     eh.emit(e);
 
     request->send(SPIFFS, "/index.html", String(), false, processor);
 }
 
-void handle_toggle_art(AsyncWebServerRequest* request) {
-    button_event_t button_event = {.id = PIN_BUTTON2_MODE, .state = ButtonFSM::MOMENTARY_TRIGGERED};
-    event_t e = {.event_type = EVENT_BUTTON_PRESSED, {.button_info = button_event}};
+void handle_toggle_art(AsyncWebServerRequest* request)
+{
+    button_event_t button_event = { .id = PIN_BUTTON2_MODE,
+        .state = ButtonFSM::MOMENTARY_TRIGGERED };
+    event_t e = { .event_type = EVENT_BUTTON_PRESSED,
+        { .button_info = button_event } };
     eh.emit(e);
 
     request->send(SPIFFS, "/index.html", String(), false, processor);
 }
 
-void start_web_server(server_mode_t server_mode) {
+void start_web_server(server_mode_t server_mode)
+{
     // Filessystem setup
     print("Setting up filesystem\n");
     if (!SPIFFS.begin(true)) {
@@ -202,7 +226,8 @@ void start_web_server(server_mode_t server_mode) {
     if (server_mode == WEB_AP) {
         // Connect to Wi-Fi network with SSID and password
         print("Setting up AP mode\n");
-        WiFi.mode(WIFI_AP_STA);  // set to ap/sta mode so that we can test WiFi STA access
+        WiFi.mode(
+            WIFI_AP_STA); // set to ap/sta mode so that we can test WiFi STA access
 
         // Setup AP with no password
         WiFi.softAP(APP_NAME, NULL);
@@ -210,7 +235,8 @@ void start_web_server(server_mode_t server_mode) {
 
         dns_server.start(53, "*", WiFi.softAPIP());
     } else {
-        connect_wifi();  // kick off a wifi connection with the existing config if possible
+        connect_wifi(); // kick off a wifi connection with the existing config if
+                        // possible
     }
 
     // server.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);
@@ -224,35 +250,43 @@ void start_web_server(server_mode_t server_mode) {
     server.on("/toggle-art", HTTP_GET, handle_toggle_art);
 
     // Handle all other static page requests
+    print("Server mode: %d\n", server_mode);
 
-    switch (server_mode) {
-        case WEB_CONTROL:
-            server.serveStatic("/", SPIFFS, "/")
-                .setDefaultFile("index.html")
-                .setTemplateProcessor(processor);
-            break;
-        case WEB_SETUP:
-            server.serveStatic("/", SPIFFS, "/")
-                .setDefaultFile("index-setup.html")
-                .setTemplateProcessor(processor);
-        case WEB_AP:
-            server.serveStatic("/", SPIFFS, "/")
-                .setDefaultFile("index-ap.html")
-                .setTemplateProcessor(processor);
-        default:
-            server.serveStatic("/", SPIFFS, "/")
-                .setDefaultFile("index.html")
-                .setTemplateProcessor(processor);
+    if (server_mode == WEB_CONTROL) {
+        print("Serving control page\n");
+        server.serveStatic("/", SPIFFS, "/")
+            .setDefaultFile("index.html")
+            .setTemplateProcessor(processor);
+    } else if (server_mode == WEB_SETUP) {
+        print("Serving setup page\n");
+        server.serveStatic("/", SPIFFS, "/")
+            .setDefaultFile("index-setup.html")
+            .setTemplateProcessor(processor);
+    } else if (server_mode == WEB_AP) {
+        print("Serving AP page\n");
+        server.serveStatic("/", SPIFFS, "/")
+            .setDefaultFile("index-ap.html")
+            .setTemplateProcessor(processor);
+    } else {
+        print("Serving default page\n");
+        server.serveStatic("/", SPIFFS, "/")
+            .setDefaultFile("index.html")
+            .setTemplateProcessor(processor);
     }
 
     server.onNotFound([](AsyncWebServerRequest* request) {
-        request->send(404);
+        request->send(404,
+            "text/plain",
+            "The content you are looking for was not found: " + request->url());
+        print("404\n");
     });
 
     // Handle events
     web_events.onConnect([](AsyncEventSourceClient* client) {
+        print("Client connected!\n");
         if (client->lastId()) {
-            print("Client reconnected! Last message ID that it got is: %u\n", client->lastId());
+            print("Client reconnected! Last message ID that it got is: %u\n",
+                client->lastId());
         }
         // send event with message "hello!", id current millis
         // and set reconnect delay to 1 second
@@ -261,4 +295,5 @@ void start_web_server(server_mode_t server_mode) {
     server.addHandler(&web_events);
 
     server.begin();
+    print("Server listening on ip %s\n", WiFi.localIP().toString().c_str());
 }

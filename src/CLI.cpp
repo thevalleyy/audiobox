@@ -8,7 +8,8 @@
 #include "Spotify.h"
 #include "Utils.h"
 
-void start_cli() {
+void start_cli()
+{
     CLIMenu menu_main, menu_wifi, menu_spotify, menu_clear_prefs;
 
     // Main
@@ -44,37 +45,56 @@ void start_cli() {
     menu_main.run_cli();
 }
 
-void check_wifi_prefs() {
+void check_wifi_prefs()
+{
     Preferences prefs;
     prefs.begin(APP_NAME, false);
 
     char wifi_ssid[CLI_MAX_CHARS];
 
     print("Current wifi network: ");
-    if (!prefs.getString(PREFS_WIFI_SSID_KEY, wifi_ssid, CLI_MAX_CHARS)) {
+    if (!prefs.getString(PREFS_WIFI_SSID_KEY, wifi_ssid, CLI_MAX_CHARS))
+    {
         print("*** not set ***\n");
-    } else {
+    }
+    else
+    {
         print("%s\n", wifi_ssid);
     }
     prefs.end();
 }
 
-void set_wifi_prefs() {
+void set_wifi_prefs()
+{
     Preferences prefs;
     prefs.begin(APP_NAME, false);
     set_pref(&prefs, PREFS_WIFI_SSID_KEY);
     set_pref(&prefs, PREFS_WIFI_PASS_KEY);
+
+    // log the new values
+    char wifi_ssid[CLI_MAX_CHARS];
+    char wifi_pass[CLI_MAX_CHARS];
+    prefs.getString(PREFS_WIFI_SSID_KEY, wifi_ssid, CLI_MAX_CHARS);
+    prefs.getString(PREFS_WIFI_PASS_KEY, wifi_pass, CLI_MAX_CHARS);
+    print("PREFS_WIFI_SSID_KEY=%s\n", wifi_ssid);
+    print("PREFS_WIFI_PASS_KEY=%s\n", wifi_pass);
+
     prefs.end();
 }
 
-void set_wifi_prefs_scan() {
+void set_wifi_prefs_scan()
+{
     print("\nScanning wifi networks...\n");
     int n = WiFi.scanNetworks();
-    if (n == 0) {
+    if (n == 0)
+    {
         print("No networks found, try using manual method to set wifi SSID.\n");
-    } else {
+    }
+    else
+    {
         print("%d networks found:\n", n);
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
+        {
             print("\t%d. %s (%d)\n", i + 1, WiFi.SSID(i).c_str(), WiFi.RSSI(i));
         }
     }
@@ -82,11 +102,13 @@ void set_wifi_prefs_scan() {
 
     char rcvd[CLI_MAX_CHARS];
     int idx = -1;
-    while (idx < 0 || idx > n) {
+    while (idx < 0 || idx > n)
+    {
         print("Select a network: ");
         get_input(rcvd);
         idx = atoi(rcvd);
-        if (idx == 0) return;
+        if (idx == 0)
+            return;
     }
     print("%s selected.\nEnter pass: ", WiFi.SSID(idx - 1).c_str());
     get_input(rcvd);
@@ -96,10 +118,14 @@ void set_wifi_prefs_scan() {
 
     set_pref(&prefs, PREFS_WIFI_SSID_KEY, WiFi.SSID(idx - 1).c_str());
     set_pref(&prefs, PREFS_WIFI_PASS_KEY, rcvd);
+
+    print("PREFS_WIFI_SSID_KEY=", WiFi.SSID(idx - 1).c_str());
+    print("PREFS_WIFI_PASS_KEY=%s\n", rcvd);
     prefs.end();
 }
 
-void set_spotify_client_id() {
+void set_spotify_client_id()
+{
     char client_id[CLI_MAX_CHARS];
     char client_secret[CLI_MAX_CHARS];
     char auth_b64[CLI_MAX_CHARS];
@@ -112,23 +138,31 @@ void set_spotify_client_id() {
     set_pref(&prefs, PREFS_SPOTIFY_CLIENT_SECRET_KEY);
 
     if (!prefs.getString(PREFS_SPOTIFY_CLIENT_ID_KEY, client_id, CLI_MAX_CHARS) ||
-        !prefs.getString(PREFS_SPOTIFY_CLIENT_SECRET_KEY, client_secret, CLI_MAX_CHARS)) {
+        !prefs.getString(PREFS_SPOTIFY_CLIENT_SECRET_KEY, client_secret, CLI_MAX_CHARS))
+    {
         print("Failed to retrieve Spotify credentials\n");
         return;
     }
 
+    print("Client ID: %s\n", client_id);
+    print("Client Secret: %s\n", client_secret);
+
     compute_auth_b64(client_id, client_secret, auth_b64);
     print("Storing: %s\n", auth_b64);
     stored = prefs.putString(PREFS_SPOTIFY_AUTH_B64_KEY, auth_b64);
-    if (stored > 0) {
-
-    } else {
+    if (stored > 0)
+    {
+        print("B64: %s\n", auth_b64);
+    }
+    else
+    {
         print("Failed to store to preferences\n");
     }
     prefs.end();
 }
 
-bool get_spotify_auth_url(char *auth_url) {
+bool get_spotify_auth_url(char *auth_url)
+{
     bool ret = false;
     char client_id[CLI_MAX_CHARS];
     char auth_b64[CLI_MAX_CHARS];
@@ -137,17 +171,27 @@ bool get_spotify_auth_url(char *auth_url) {
     prefs.begin(APP_NAME, false);
 
     if (!prefs.getString(PREFS_SPOTIFY_CLIENT_ID_KEY, client_id, CLI_MAX_CHARS) ||
-        !prefs.getString(PREFS_SPOTIFY_AUTH_B64_KEY, auth_b64, CLI_MAX_CHARS)) {
+        !prefs.getString(PREFS_SPOTIFY_AUTH_B64_KEY, auth_b64, CLI_MAX_CHARS))
+    {
         print("Set Spotify client ID first!\n");
-    } else if (connect_wifi() && Spotify::request_user_auth(client_id, auth_b64, auth_url)) {
-        ret = true;
+    }
+    else
+    {
+        print("Client ID: %s\n", client_id);
+        print("Auth B64: %s\n", auth_b64);
+        print("Attempting to connect to wifi and get authorization URL\n");
+        if (connect_wifi() && Spotify::request_user_auth(client_id, auth_b64, auth_url))
+        {
+            ret = true;
+        }
     }
 
     prefs.end();
     return ret;
 }
 
-bool get_and_save_spotify_refresh_token(const char *auth_code) {
+bool get_and_save_spotify_refresh_token(const char *auth_code)
+{
     bool ret = false;
     char auth_b64[CLI_MAX_CHARS];
     char refresh_token[CLI_MAX_CHARS];
@@ -155,9 +199,12 @@ bool get_and_save_spotify_refresh_token(const char *auth_code) {
     Preferences prefs;
     prefs.begin(APP_NAME, false);
 
-    if (!prefs.getString(PREFS_SPOTIFY_AUTH_B64_KEY, auth_b64, CLI_MAX_CHARS)) {
+    if (!prefs.getString(PREFS_SPOTIFY_AUTH_B64_KEY, auth_b64, CLI_MAX_CHARS))
+    {
         print("Set Spotify client ID first!\n");
-    } else if (connect_wifi() && Spotify::get_refresh_token(auth_b64, auth_code, refresh_token)) {
+    }
+    else if (connect_wifi() && Spotify::get_refresh_token(auth_b64, auth_code, refresh_token))
+    {
         set_pref(&prefs, PREFS_SPOTIFY_REFRESH_TOKEN_KEY, refresh_token);
         ret = true;
     }
@@ -166,11 +213,15 @@ bool get_and_save_spotify_refresh_token(const char *auth_code) {
     return ret;
 }
 
-void set_spotify_account() {
+void set_spotify_account()
+{
     char auth_url[HTTP_MAX_CHARS];
     char auth_code[CLI_MAX_CHARS];
 
-    if (get_spotify_auth_url(auth_url)) {
+    print("\nSetting up Spotify account\n");
+
+    if (get_spotify_auth_url(auth_url))
+    {
         print("\nLaunch the following URL in your browser to authorize access: ");
         print("%s\n", auth_url);
         print("\nAfter granting access, you will be redirected to a webpage.\n");
@@ -179,18 +230,23 @@ void set_spotify_account() {
         print("\nCopy and paste the characters after \"code: \" on the webpage. Do not include the quotation (\") marks: ");
         get_input(auth_code);
 
-        if (get_and_save_spotify_refresh_token(auth_code)) {
+        if (get_and_save_spotify_refresh_token(auth_code))
+        {
             print("Spotify credentials successfully set, attempting to login\n");
-            if (get_and_save_spotify_user_name()) {
+            if (get_and_save_spotify_user_name())
+            {
                 print("Success!\n");
             }
         }
-    } else {
+    }
+    else
+    {
         print("Request user authorization failed\n");
     }
 }
 
-bool get_and_save_spotify_user_name() {
+bool get_and_save_spotify_user_name()
+{
     bool ret = false;
     char client_id[CLI_MAX_CHARS];
     char auth_b64[CLI_MAX_CHARS];
@@ -202,13 +258,17 @@ bool get_and_save_spotify_user_name() {
 
     if (!prefs.getString(PREFS_SPOTIFY_CLIENT_ID_KEY, client_id, CLI_MAX_CHARS) ||
         !prefs.getString(PREFS_SPOTIFY_AUTH_B64_KEY, auth_b64, CLI_MAX_CHARS) ||
-        !prefs.getString(PREFS_SPOTIFY_REFRESH_TOKEN_KEY, refresh_token, CLI_MAX_CHARS)) {
+        !prefs.getString(PREFS_SPOTIFY_REFRESH_TOKEN_KEY, refresh_token, CLI_MAX_CHARS))
+    {
         print("Failed to get Spotify preferences!\n");
-    } else {
-        Spotify *sp = new Spotify(client_id, auth_b64, refresh_token);  // create on the heap to avoid stack size issues
+    }
+    else
+    {
+        Spotify *sp = new Spotify(client_id, auth_b64, refresh_token); // create on the heap to avoid stack size issues
         sp->update();
         sp->get_user_name(user_name);
-        if (strlen(user_name) > 0) {
+        if (strlen(user_name) > 0)
+        {
             set_pref(&prefs, PREFS_SPOTIFY_USER_NAME_KEY, user_name);
             ret = true;
         }
@@ -219,7 +279,8 @@ bool get_and_save_spotify_user_name() {
     return ret;
 }
 
-void clear_prefs() {
+void clear_prefs()
+{
     Preferences prefs;
     prefs.begin(APP_NAME, false);
     print("Clearing preferences\n");
@@ -227,7 +288,8 @@ void clear_prefs() {
     prefs.end();
 }
 
-void test_wifi_connection() {
+void test_wifi_connection()
+{
     print("\n");
     connect_wifi();
     print("disconnecting\n");
