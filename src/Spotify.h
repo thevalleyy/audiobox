@@ -31,9 +31,9 @@ const char SPOTIFY_FEATURES_URL[] = "https://api.spotify.com/v1/audio-features";
 // Commented values were empirically found to be the average document size for each response type, however,
 // these are set to the same value to reduce heap fragmentation.
 // See here for more details on ArduinoJson memory usage: https://arduinojson.org/v6/how-to/reduce-memory-usage/
-#define SPOTIFY_TOKEN_JSON_SIZE 2000 // ~300 bytes
-#define SPOTIFY_PLAYER_JSON_SIZE 2000 // 5000~6000 bytes ==> 2000 bytes of json memory after filtering
-#define SPOTIFY_FEATURES_JSON_SIZE 2000 // ~600 bytes
+#define SPOTIFY_TOKEN_JSON_SIZE 2000         // ~300 bytes
+#define SPOTIFY_PLAYER_JSON_SIZE 2000        // 5000~6000 bytes ==> 2000 bytes of json memory after filtering
+#define SPOTIFY_FEATURES_JSON_SIZE 2000      // ~600 bytes
 #define SPOTIFY_REFRESH_TOKEN_JSON_SIZE 2000 // ~500 bytes
 #define SPOTIFY_USER_JSON_SIZE 2000
 

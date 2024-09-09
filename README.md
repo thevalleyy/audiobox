@@ -1,264 +1,124 @@
-# <img src="images/apple-touch-icon-174x174.png" alt="Audiobox application icon" height=42 width=42 valign=bottom /> Audiobox XL
+# <img src="images/apple-touch-icon-174x174.png" alt="Audiobox application icon" height=32 width=32 valign=bottom style="border-radius:20%" draggable="false"/> Audiobox XL
 
-Audiobox XL is a music-reactive LED box with Spotify integration.
+Audiobox XL is a music-reactive LED box with Spotify integration. It was built and designed by [Koji Gardiner](https://github.com/kojigardiner/).<br>
+In this repository, I want to document my changes and progress as I build my own personal version of Audiobox. If you want to know more about Audiobox in general, check out [Koji's repository](https://github.com/kojigardiner/audiobox).
 
 ## Table of Contents
-1. [Features](#features)
-2. [Images](#images)
-3. [Software Design](#software-design)
-4. [Hardware Design](#hardware-design)
-5. [Tools, Libraries, and Attributions](#tools-libraries-and-attributions)
-6. [Additional Examples](#additional-examples)
 
+1. [My hardware](#hardware)
+2. [Changes to the code](#code)
+3. [New Features](#features)
+4. [Build progress](#build)
+
+## Hardware
+
+For this project, I ordered some items from amazon.
+| [ESP-WROOM-32](https://www.amazon.de/dp/B0CLGVXWWN) | [WS2812B 16x16 matrix](https://www.amazon.de/dp/B09X1RYJV8) | [SG90 Mini Servo](https://www.amazon.de/dp/B07MY2Y253) | [SPH0645 I2S interface microphone](https://www.amazon.de/dp/B09B3KYJ2K) | Total |
+| ------------- | ------------- | ------------- | ------------- | --- |
+| [<img src="./images/components/esp32.jpg" alt="Image of a ESP32 microcontroller" valign=bottom draggable="false" style="max-width:150px; max-height:150px"/>](./images/components/esp32.jpg) | [<img src="./images/components/matrix.jpg" alt="Image of a 16x16 led matrix" width="200" valign=bottom draggable="false" style="max-width:150px; max-height:150px"/>](./images/components/matrix.jpg) | [<img src="./images/components/servo.jpg" alt="Image of a SG90 mini servo motor" width="200" valign=bottom draggable="false" style="max-width:150px; max-height:150px"/>](./images/components/servo.jpg) | [<img src="./images/components/microphone.jpg" alt="Image of a SPH0645 microphone" width="200" valign=bottom draggable="false" style="max-width:150px; max-height:150px"/>](./images/components/microphone.jpg) |
+| 3× | 1× | 4× | 1× |
+| 14.99€ | 21.99€ | 9.99€ | 12.17€ | 59.14€ |
+| 16.54$ | 24.27$ | 11.03$ | 13.43$ | 65.27$ |
+
+<sub>These values reflect the money I paid in euro and dollar, not the current prices on Amazon.</sub>
+
+Some things I needed I had already laying around from other projects.
+
+| 830 pin breadboard                                                                                                                                                                           | Jumper wires                                                                                                                                                                           | Breadboard bridges                                                                                                                                                                          | LEDs                                                                                                                                                                                      | RJ45 ethernet cable                                                                                                                                                                                 |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [<img src="./images/components/breadboard.jpg" alt="Image of a breadboard" valign=bottom draggable="false" style="max-width:150px; max-height:150px"/>](./images/components//breadboard.jpg) | [<img src="./images/components/jumpers.jpg" alt="Image of jumper cables" valign=bottom draggable="false" style="max-width:150px; max-height:150px"/>](./images/components/jumpers.jpg) | [<img src="./images/components/bridges.jpg" alt="Image of breadboard bridges" valign=bottom draggable="false" style="max-width:150px; max-height:150px"/>](./images/components/bridges.jpg) | [<img src="./images/components/leds.jpg" alt="Image of different colored leds" valign=bottom draggable="false" style="max-width:150px; max-height:150px"/>](./images/components/leds.jpg) | [<img src="./images/components/ethernet.jpg" alt="Image of an ethernet cable (RJ45)" valign=bottom draggable="false" style="max-width:150px; max-height:150px"/>](./images/components/ethernet.jpg) |
+| 2×                                                                                                                                                                                           |                                                                                                                                                                                        |                                                                                                                                                                                             | 2×                                                                                                                                                                                        | 1×                                                                                                                                                                                                  |
+
+## Code
+
+Pretty much all changes I made to the original code are `print()` calls.
+
+In **`platformio.ini`** I had to specify the platform to the specific version `espressif32@3.5.0` since the code wouldn't build otherwise. I added `ArduinoSort.zip` to the project and required it via a relative path. The last thing I did was to specify `board_build.filesystem = spiffs`.
+
+In **`AudioProcessor.cpp`**,
+
+```cpp
+i2s_config_t i2s_config = {
+    .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB
+};
+```
+
+was marked as deprecated. So I replaced it:
+
+```cpp
+i2s_config_t i2s_config = {
+    .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB)
+};
+```
+
+Since `SPOTIFY_REDIRECT_URI` in **`Spotify.h`** is hardcoded to a specific IP, I changed it to match my ESP's IP. After audiobox is authorized to access your Spotify account, this value becomes obsolete.
+
+In **`WebServer.cpp`** I replaced a `switch` statement by `if else if`, because my ESP somehow interpreted integers als boolean values in the switch statement.
+
+In **`main.cpp`** I had to change some button logic, since the built-in buttons on my ESP are `HIGH` by default.
+
+### ⚠ This is important if you plan to run Audiobox on your ESP!
+
+The weirdest thing I encountered was that the default stack size of `8192` bytes wasn't enough to run the spotify authorization. So I naturally just went to `C:\Users\%USERNAME%\.platformio\packages\framework-arduinoespressif32@3.10006.210326\tools\sdk\include\config\sdkconfig.h` and changed line `175` to
+
+```h
+#define CONFIG_ARDUINO_LOOP_STACK_SIZE 8192 * 4
+```
+
+Another difficulty I had was the filesystem. I didn't work with platformio before, so I didn't know how to upload the data to my ESP. Luckily, I found a [detailed guide](https://randomnerdtutorials.com/esp32-vs-code-platformio-spiffs/) that helped me to manage that.
 
 ## Features
-- Display album art corresponding to the music playing on a linked Spotify account
-- Extract the color palette from the current album art and use it to color visualizations
-- Display a variety of FFT-based music visualizations using an external microphone
-- Automatically adjust the physical LED panel position for diffuse vs sharply defined art
-- Two push-buttons for mode control
-- Browser-based UI for control and setup
-- Command line interface for setup
 
-## Images
-<figure>
-<figcaption><i>Album art for the album "Ganging Up on the Sun" by Guster</i></figcaption>
+Right now, I haven't added any new features. But I've planned a few.
+
+## Build
+
+The first thing I did was to put my ESP on two breadboards and connect everything.
+
+<div style="max-width:500px;">
+    <img src="./images/build/breadboard-from-above.jpg" valign=bottom draggable="false" /> 
+    The breadboard with all the components on it from above
+</div>
+<br>
+<div style="max-width:500px;">
+    <img src="./images/build/matrix-from-above.jpg" valign=bottom draggable="false" /> 
+    The 16x16 led matrix
+</div>
+<br>
+<div style="max-width:500px;">
+    <img src="./images/build/matrix-back-from-above.jpg" valign=bottom draggable="false" /> 
+    🔵 VCC 🟤 DIN 🟢 GND
+</div>
+<br>
+<div style="max-width:500px;">
+    <img src="./images/build/servo-from-above.jpg" valign=bottom draggable="false" /> 
+    🟠 VCC 🟡 PWM 🔴 GND
+</div>
+<br>
+<div style="max-width:500px;">
+    <img src="./images/build/microphone-old-connector.jpg" valign=bottom draggable="false" /> 
+    I connected the microphone via five jumper wires for testing
+</div>
+<br>
+<div style="max-width:500px;">
+    <img src="./images/build/microphone-testing-connectivity.jpg" valign=bottom draggable="false" /> 
+    I soldered a ethernet cable (2m or 6.6ft) to the microphone and tested the connectivity. 🟢 GND 🟡 BLCK LRCL 🔴 DOUT 🟤 VCC
+    <br>Connecting SEL isn't nesseccary, because we listen only on the left channel. (I know this is bad practice)
+</div>
+<br>
+<div style="max-width:500px;">
+    <img src="./images/build/microphone-heat-shrink-tube.jpg" valign=bottom draggable="false" /> 
+    To To reinforce and protect the inner cables, I put a heat shrink tube between the microphone and the outer cable
+</div>
+<br>
+<div style="max-width:500px;">
+    <img src="./images/build/microphone-ethernet-cable.jpg" valign=bottom draggable="false" /> 
+    This is the microphone and cable right now
+</div>
+<br>
+
+<figcaption>Matrix vs album cover (Coldplay - A Head Full of Dreams)</figcaption>
 <div style="display:flex; gap:10px">
-<img src="images/album_art/guster.jpg" alt="Audiobox with album art" width=600>
+<img src="./images/build/matrix-cover.jpg" alt="the" height=300>
+<img src="./images/build/coldplay.png" alt="" height=300>
 </div>
-</figure>
-
-<figure>
-<figcaption><i>Transition to lava lamp display mode</i></figcaption>
-<div style="display:flex; gap:10px">
-<img src="images/gifs/guster_transition.GIF" alt="Audiobox with lava display" width=300>
-<img src="images/gifs/guster_lava3.GIF" alt="Audiobox with lava display" width=300>
-</div>
-</figure>
-
-<figure>
-<figcaption><i>Music-reactive display modes</i></figcaption>
-<div style="display:flex; gap:10px">
-<img src="images/gifs/guster_sym1.gif" alt="Side view of Audiobox with vertical music-reactive display" width=300>
-<img src="images/gifs/guster_diffuse3.gif" alt="Front view of Audiobox with diffuse music-reactive display" width=300>
-</div>
-</figure>
-
-## Software Design
-### Tasks
-Seven [FreeRTOS](https://www.freertos.org/) tasks are utilized to manage various control loops. A global event handler object manages communication between tasks. Tasks can independently emit messages to the event handler object, which then passes messages back to tasks that have subscribed to specific message types. In this way, no task needs to communicate directly with another -- all inter-task communication happens via the event handler.
-
-Note the Spotify task is pinned to CORE0 and all others to CORE1. Empirically, the Spotify task has proven to be significantly more stable on CORE0, perhaps due to the WiFi libraries also running there.
-
-### Spotify Integration
-[Spotify's Web API](https://developer.spotify.com/documentation/web-api/) provides music playback information pertaining to the currently linked user account. The authorization flow requires a Spotify user to log into their account and allow the application to read "user-read-playback-state" and "user-read-playback-position" information.
-
-### Control
-The browser-based UI is served directly from the ESP32 using the [ESPAsyncWebServer](https://github.com/me-no-dev/ESPAsyncWebServer) library. Server-sent-events (SSE) are used to update the UI contents in realtime as audio tracks change.
-
-<figure>
-<figcaption><i>Desktop and mobile browser UI</i></figcaption>
-<div style="display:flex; gap:10px">
-<img src="images/audiobox_web2.png" alt="Screenshot of desktop browser controller with music playing" height=400>
-<img src="images/audiobox_app2.png" alt="Screenshot of mobile browser controller with music playing" height=400>
-</div>
-</figure>
-
-### Color Palettes
-
-Color palette generation uses a "mean cut" algorithm (similar to [median cut](https://en.wikipedia.org/wiki/Median_cut)) to recursively sort and split groups of pixels at their mean (e.g. average R, G, and B). This results in "buckets" of pixels with similar colors. The average of the pixels in each final bucket approximate the most dominant colors in the input image. By default the algorithm runs to a depth of 4, resulting in 2^4 = 16 final colors.
-
-<figure>
-<figcaption><i>Example color palettes</i></figcaption>
-<div style="display:flex; gap:10px">
-<img src="images/palettes/golden_hour.png" alt="Screenshot of album art and color palette" width=400>
-<img src="images/palettes/all_ashore.png" alt="Screenshot of album art and color palette" width=400>
-</div>
-<div style="display:flex; gap:10px">
-<img src="images/palettes/the_resistance.png" alt="Screenshot of album art and color palette" width=400>
-<img src="images/palettes/stereolab.png" alt="Screenshot of album art and color palette" width=400>
-</div>
-</figure>
-
-### Memory Allocation 
-In general the code in this project makes use of static memory allocation and avoids use of Arduino Strings where possible to avoid heap fragmentation. However, album art jpgs, ArduinoJson objects for Spotify response parsing, and the LEDNoisePattern object are all allocated on the heap. 
-
-The event handler task can optionally dump the maximum stack usage for each task, allowing for fine-tuning of stack allocation. Note that the ESPAsyncWebServer dynamically allocates memory to manage HTTP requests, drastically reducing available heap memory during client requests.
-
-## Hardware Design
-
-### Why XL?
-Designing the Audiobox XL was an iterative process, with an initial version that was based on an 8x8 LED panel with no LED panel actuation. I've retroactively named the earlier device Audibox Mini. While the much lower pixel resolution meant album art couldn't be accurately displayed on the Audiobox Mini, the initial prototype helped flesh out many of the electrical, mechanical, and software design elements that made it into the Audiobox XL.
-
-<figure>
-<figcaption><i>Audiobox Mini and Audiobox XL</i></figcaption>
-<div style="display:flex; gap:10px">
-<img src="images/audiobox_progression1.jpg" alt="" height=300>
-<img src="images/audiobox_progression2.jpg" alt="" height=300>
-</div>
-</figure>
-
-### Electrical Design
-The core elements of the Audiobox are an [Espressif ESP32 development board](https://www.amazon.com/HiLetgo-ESP-WROOM-32-Development-Microcontroller-Integrated/dp/B0718T232Z) and a [16x16 LED panel](https://www.amazon.com/gp/product/B088BTYJH6) consisting of WS2812B RGB LEDs, arranged in a serpentine pattern. An [SG90 micro servo motor](https://www.amazon.com/gp/product/B07MLR1498) adjusts the distance of the LED panel from the front diffuser. The LED panel and servo motor consume significant current and necessitate the use of an external power supply (5V 10A) to avoid instability and brown-out.
-
-<figure>
-<figcaption><i>ESP32 dev board</i></figcaption>
-<div style="display:flex; gap:10px">
-<img src="images/audiobox_esp32.jpeg" alt="" height=300>
-</div>
-</figure>
-
-The [SPH0645 digital I2S MEMS microphone](https://www.adafruit.com/product/3421) provides audio input. I wanted to find a way to make the microphone user-adjustable in order to configure the Audiobox with different speaker arrangements, and came up with a way to utilize an off-the-shelf telephone cable and jack to do so. The SPH0645 requires a 6-pin connection, which matches perfectly with RJ12 telephone cables/jacks. The current design uses [this](https://www.amazon.com/gp/product/B01M0G7VP4) RJ12 cable, with one end cut and individual wires soldered onto the SPH0645 break-out board. The board is then enclosed within a custom 3D printed shell with an acoustic port for the microhpone.
-
-<figure>
-<figcaption><i>Microhone wiring and enclosure</i></figcaption>
-<div style="display:flex; gap:10px">
-<img src="images/audiobox_mic1.jpeg" alt="" height=250>
-<img src="images/audiobox_mic2.jpeg" alt="" height=250>
-<img src="images/audiobox_mic3.jpeg" alt="" height=250>
-</div>
-</figure>
-
-### Mechanical Design
-Under the hood, the LED panel is attached to a rack-and-pinion system that moves the display with respect to the diffuser. This allows for different LED effects (soft and diffuse vs sharply defined). The ESP32 drives this behavior via commands to the servo motor. The rack-and-pinion is a custom 3D printed design, taking inspiration from various [linear actuator](https://engineerdog.com/2018/05/08/design-for-assembly-tips-building-a-better-3d-printed-linear-actuator/) [designs](https://www.thingiverse.com/thing:3170748) I found online. One change I made was to have the rack be stationary instead of the motor/pinion/base. This helped enable a more robust attachment mechanism between the LED panel and the rack-and-pinion structure. To reduce wobble of the LED panel as the motor actuates, two small "sleds" were 3D printed and attached to the bottom of the panel as guides. This, along with the use of synthetic grease ([Super Lube](https://www.amazon.com/gp/product/B000BXKZQU)) on the sleds, rack, and pinion provide smooth actuation.
-
-<figure>
-<figcaption><i>LED panel actuation</i></figcaption>
-<div style="display:flex">
-<img src="images/gifs/audiobox_actuation.gif" alt="" width=600 style="padding:5px">
-</div>
-</figure>
-
-The LED panel itself has a laser cut grid placed atop it, which helps limit light bleed between neighboring LEDs. This is particularly noticeable when the LED panel is very close to the diffuser and gives each LED the appearance of a square pixel. One downside is that as the panel moves away from the diffuser some edge effects from the grid are still visible. This is one aspect of the design that still needs some tuning.
-
-<figure>
-<figcaption><i>LED grid</i></figcaption>
-<div style="display:flex; gap:10px">
-<img src="images/audiobox_grid.jpg" alt="" height=400>
-</div>
-</figure>
-
-The plastic diffuser on the front of the box is 1/8" thick [Chemcast Black LED Acrylic](https://www.tapplastics.com/product/plastics/cut_to_size_plastic/black_led_sheet/668) from TAP Plastics. Unlike typical white diffusers, I think the black acrylic matches the dark wood aesthetic of the box as well as other devices in the the living room where the Audiobox typically resides. The diffuser has 4 small magnets attached to the corners, which mate with 4 magnets on the front of the box, making it easily removable.
-
-The outer enclosure is a custom-designed, laser cut wooden box, using 1/4" sapele. I used simple box joints along with T-slots and hex nuts/bolts to enable assembly without the need for glue. Initial prototypes utilized 1/8" Baltic birch, which proved to be too flimsy for a box of this size. The 1/4" wood is sturdy and feels nice in the hand. I finished the sapele with a few coats of [Watco Danish Oil (Natural)](https://www.rustoleum.com/product-catalog/consumer-brands/watco/danish-oil), which I discovered while working on a separate jewelry box project. The Danish Oil adds an amazing color and depth to the wood while providing protection without the plasticky feel of typical polyurethane finishes.
-
-<figure>
-<figcaption><i>Danish Oil magic</i></figcaption>
-<div style="display:flex; gap:10px">
-<img src="images/audiobox_oil1.jpeg" alt="" height=200>
-<img src="images/audiobox_oil2.jpeg" alt="" height=200>
-</div>
-</figure>
-
-I set up a camera to record a timelapse of the final assembly of the Audiobox XL, after applying the finish on the wood pieces. See it [here](images/gifs/audiobox_build.gif)!
-
-## Tools, Libraries, and Attributions
-### IDE
-- [Visual Studio Code](https://code.visualstudio.com/)
-- [PlatformIO](https://platformio.org/)
-
-### Libraries & Code
-This project makes use of the open source libraries listed below. All libraries are installed via the PlatformIO plugin in VS Code. Links below do not necessarily map to the same version of the library used in this project. See [platformio.ini](platformio.ini) for the actual dependencies.
-- [Arduino](https://github.com/espressif/arduino-esp32) - base libraries for ESP32
-- [FastLED](https://github.com/FastLED/FastLED) - for manipulating LEDs
-- [ArduinoJson](https://github.com/bblanchon/ArduinoJson) - for decoding responses from Spotify Web API
-- [TJpg_Decoder](https://github.com/Bodmer/TJpg_Decoder) - for decoding album art jpgs
-- [ESP32Servo](https://github.com/madhephaestus/ESP32Servo) - for controlling servo motor
-- [ArduinoSort](https://github.com/emilv/ArduinoSort) - for sorting pixels as part of color palette subroutine
-- [fft](https://github.com/fakufaku/esp32-fft) - for converting audio signal to frequency domain for visualizations
-- [base64](https://github.com/Densaugeo/base64_arduino) - for managing Spotify Web API authentication
-- [ESP Async Webserver](https://github.com/me-no-dev/ESPAsyncWebServer) - for managing browser-based UI
-- [s-marley](https://github.com/s-marley/ESP32_FFT_VU) - reference code for vertical bar LED visualization modes
-- [Random Nerd Tutorials](https://randomnerdtutorials.com/) - variety of references for working with ESP32 libaries
-
-### Similar Projects
-During my time developing the Audiobox I have come across a few projects with many similarities, some available commercially:
-- [Modustrial Maker - Bluetooth Speaker w/ Reactive LED Matrix](https://www.youtube.com/watch?v=X1bEgGLwVLY)
-- [Game Frame](https://www.ledseq.com/product/game-frame/)
-- [Divoom Pixoo](https://divoom.com/products/divoom-pixoo)
-- [MondoBrite](https://www.youtube.com/watch?v=EcKAotEajbQ)
-
-## Additional Examples
-<figure>
-<figcaption><i>"Golden Hour" by Kacey Musgraves</i></figcaption>
-<div style="display:flex">
-<img src="images/album_art/kacey.jpg" alt="Audiobox with album art" width=600>
-</div>
-<div style="display:flex">
-<img src="images/gifs/kacey_transition.GIF" alt="Audiobox with music reactive display" width=300>
-<img src="images/gifs/kacey_sym1.GIF" alt="Audiobox with music reactive display" width=300>
-</div>
-</figure>
-
-<figure>
-<figcaption><i>"The Resistance" by Muse</i></figcaption>
-<div style="display:flex">
-<img src="images/album_art/muse.jpg" alt="Audiobox with album art" width=600>
-</div>
-<div style="display:flex">
-<img src="images/gifs/muse_transition.GIF" alt="Audiobox with lava display" width=300>
-<img src="images/gifs/muse_diffuse1.GIF" alt="Audiobox with lava display" width=300>
-</div>
-</figure>
-
-<figure>
-<figcaption><i>"The Phosphorescent Blues" by Punch Brothers</i></figcaption>
-<div style="display:flex">
-<img src="images/album_art/punch.jpg" alt="Audiobox with album art" width=600>
-</div>
-<div style="display:flex">
-<img src="images/gifs/punch_lava1.GIF" 
-alt="Audiobox with lava display" width=300>
-<img src="images/gifs/punch_vert1.GIF" alt="Audiobox with lava display" width=300>
-</div>
-</figure>
-
-<figure>
-<figcaption><i>"Unlimited Love" by Red Hot Chili Peppers</i></figcaption>
-<div style="display:flex">
-<img src="images/album_art/rhcp.jpg" alt="Audiobox with album art" width=600>
-</div>
-<div style="display:flex">
-<img src="images/gifs/rhcp_lava1.GIF" alt="Audiobox with lava display" width=300>
-<img src="images/gifs/rhcp_sym1.GIF" alt="Audiobox with lava display" width=300>
-</div>
-</figure>
-
-<figure>
-<figcaption><i>"Mars Audiac Quintet" by Stereolab</i></figcaption>
-<div style="display:flex">
-<img src="images/album_art/stereolab.jpg" alt="Audiobox with album art" width=600>
-</div>
-<div style="display:flex">
-<img src="images/gifs/stereolab_lava2.GIF" alt="Audiobox with lava display" width=300>
-<img src="images/gifs/stereolab_diffuse1.GIF" alt="Audiobox with lava display" width=300>
-</div>
-</figure>
-
-<figure>
-<figcaption><i>"seeds" by TV On The Radio</i></figcaption>
-<div style="display:flex">
-<img src="images/album_art/tvotr.jpg" alt="Audiobox with album art" width=600>
-</div>
-<div style="display:flex">
-<img src="images/gifs/tvotr_transition.GIF" alt="Audiobox with lava display" width=300>
-<img src="images/gifs/tvotr_sym1.GIF" alt="Audiobox with lava display" width=300>
-</div>
-</figure>
-
-<figure>
-<figcaption><i>"American Idiot" by Green Day</i></figcaption>
-<div style="display:flex">
-<img src="images/album_art/greenday.jpg" alt="Audiobox with album art" width=600>
-</div>
-<div style="display:flex">
-<img src="images/gifs/greenday_sym1.GIF" alt="Audiobox with music reactive display" width=300>
-</div>
-</figure>
-
-<figure>
-<figcaption><i>"Nice." by Super Guitar Bros.</i></figcaption>
-<div style="display:flex">
-<img src="images/album_art/super.jpg" alt="Audiobox with album art" width=600>
-</div>
-</figure>

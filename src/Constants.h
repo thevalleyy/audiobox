@@ -33,28 +33,28 @@ const uint8_t WIFI_DNS2[4] = { 8, 8, 4, 4 };
 #define MAX_EVENTHANDLER_EVENTS 32
 
 // Maximum string lengths
-#define HTTP_MAX_CHARS 512 // max number of chars for http processing
-#define CLI_MAX_CHARS 256 // max number of chars for CLI input
+#define HTTP_MAX_CHARS 512   // max number of chars for http processing
+#define CLI_MAX_CHARS 256    // max number of chars for CLI input
 #define MAX_CLI_MENU_ITEMS 9 // max items per level of CLI
 #define MAX_CLI_MENU_TEXT 64 // max text length for CLI menu items
 
 // Hardware pins
-#define PIN_LED_CONTROL 12 // LED strip control GPIO
-#define PIN_LED_STATUS 2 // Status LED on ESP32 Hiletgo board
-#define PIN_BUTTON_MODE 14 // Physical mode button 1 (upper)
-#define PIN_BUTTON2_MODE 22 // Physical Mode button 2 (lower)
-#define PIN_BUTTON_LED 27 // Illuminated button LED
-#define PIN_I2S_BCK 5 // I2S for microphone
-#define PIN_I2S_DIN 17 // I2S for microphone
-#define PIN_I2S_WS 16 // I2S for microphone
-#define PIN_SERVO 18 // I2S for microphone
+#define PIN_LED_CONTROL 12           // LED strip control GPIO
+#define PIN_LED_STATUS 2             // Status LED on ESP32 Hiletgo board
+#define PIN_BUTTON_MODE 14           // Physical mode button 1 (upper)
+#define PIN_BUTTON2_MODE 22          // Physical Mode button 2 (lower)
+#define PIN_BUTTON_LED 27            // Illuminated button LED
+#define PIN_I2S_BCK 5                // I2S for microphone
+#define PIN_I2S_DIN 17               // I2S for microphone
+#define PIN_I2S_WS 16                // I2S for microphone
+#define PIN_SERVO 18                 // I2S for microphone
 #define PIN_POWER_SWITCH GPIO_NUM_13 // GPIO number used as wakeup source. Only GPIOs which are have RTC
                                      // functionality can be used: 0,2,4,12-15,25-27,32-39.
 
 // LED
 #define MAX_BRIGHT 50 // sets max brightness for LEDs, 100 = ~3A at full white, 60 = ~1.8A
-#define GRID_H 16 // LED panel height
-#define GRID_W 16 // LED panel width
+#define GRID_H 16     // LED panel height
+#define GRID_W 16     // LED panel width
 #define NUM_LEDS GRID_H* GRID_W
 #define FPS 60 // LED refresh rate
 
@@ -65,36 +65,36 @@ const uint8_t WIFI_DNS2[4] = { 8, 8, 4, 4 };
 #define JPG_GAMMA 2.2 // used to undo gamma encoding during JPG decode
 
 // Audio
-#define I2S_PORT I2S_NUM_0 // I2S port
-#define I2S_SAMPLE_RATE 44100 // audio sampling rate (per Nyquist, FFT will provide up frequency information up to sample_rate / 2)
-#define I2S_MIC_BIT_DEPTH 18 // SPH0645 bit depth, per datasheet (18-bit 2's complement in 24-bit container)
-#define FFT_SAMPLES 1024 // Number of audio samples to collect per FFT invocation. FFT result will have FFT_SAMPLES / 2 data points.
+#define I2S_PORT I2S_NUM_0                                      // I2S port
+#define I2S_SAMPLE_RATE 44100                                   // audio sampling rate (per Nyquist, FFT will provide up frequency information up to sample_rate / 2)
+#define I2S_MIC_BIT_DEPTH 18                                    // SPH0645 bit depth, per datasheet (18-bit 2's complement in 24-bit container)
+#define FFT_SAMPLES 1024                                        // Number of audio samples to collect per FFT invocation. FFT result will have FFT_SAMPLES / 2 data points.
 #define FFTS_PER_SEC int(double(I2S_SAMPLE_RATE) / FFT_SAMPLES) // number of FFTs computed each sec
 
 // Timeouts and delays
-#define DURATION_MS_ART 10000 // how long to display the album art before switching modes
-#define DURATION_MS_AUDIO 600000 // how long to display audio visualization before switching modes
+#define DURATION_MS_ART 10000      // how long to display the album art before switching modes
+#define DURATION_MS_AUDIO 600000   // how long to display audio visualization before switching modes
 #define SPOTIFY_CYCLE_TIME_MS 1000 // how often to run the Spotify task
-#define SERVO_CYCLE_TIME_MS 50 // how often to run the servo task
-#define WIFI_TIMEOUT_MS 10000 // how long to wait on wifi connect before bailing out
+#define SERVO_CYCLE_TIME_MS 50     // how often to run the servo task
+#define WIFI_TIMEOUT_MS 10000      // how long to wait on wifi connect before bailing out
 
 // Mean cut
-#define MEAN_CUT_DEPTH 4 // recursive depth for mean cut algorithm (results in 2^MEAN_CUT_DEPTH colors)
+#define MEAN_CUT_DEPTH 4                      // recursive depth for mean cut algorithm (results in 2^MEAN_CUT_DEPTH colors)
 #define PALETTE_ENTRIES (1 << MEAN_CUT_DEPTH) // number of color palette entries
 
 // Servo
-#define SERVO_MIN_US 700 // minimum servo PWM setting in microseconds
+#define SERVO_MIN_US 700  // minimum servo PWM setting in microseconds
 #define SERVO_MAX_US 2400 // maximum servo PWM setting in microseconds
 #define SERVO_MAX_POS 170 // maximum servo angular position (0 to 180)
-#define SERVO_MIN_POS 20 // minimum servo angular position (0 to 180)
+#define SERVO_MIN_POS 20  // minimum servo angular position (0 to 180)
 
 // Servo positions
 // larger number = sharper image, LED panel closer to front of box
 // smaller number = blurrier image, LED panel further from front of box
 #define SERVO_POS_NOISE 30 // position for lava / noise display mode
-#define SERVO_POS_ART 110 // position for album art mode
+#define SERVO_POS_ART 110  // position for album art mode
 #define SERVO_POS_BARS 160 // position for vertical column visualizer
-#define SERVO_POS_GRID 30 // position for diffuse visualizer mode
+#define SERVO_POS_GRID 30  // position for diffuse visualizer mode
 
 // Modes
 enum MainMode {
@@ -122,11 +122,11 @@ enum AudioSubMode {
 };
 
 // Audio volume control
-#define VOL_FACTOR 10 // empirically found that RMS of signal needs x10 to match RMS of FFT
-#define VOL_MULT 0.4 * 256 / FFT_SAMPLES // multiplier to go from volume to FFT max value, scaled by FFT_SAMPLES because more samples = less energy per bin
-#define VOL_PEAK_FACTOR 1.5 // factor above avg for finding peaks
-#define VOL_AVG_SCALE 0.01 * 30 / FPS // exponential moving averaging scale factor for calculating running avg of volume
-#define VOL_THRESH_DB -65 // threshold below which we shouldn't update LEDs as FFT data may not be reliable
+#define VOL_FACTOR 10                       // empirically found that RMS of signal needs x10 to match RMS of FFT
+#define VOL_MULT 0.4 * 256 / FFT_SAMPLES    // multiplier to go from volume to FFT max value, scaled by FFT_SAMPLES because more samples = less energy per bin
+#define VOL_PEAK_FACTOR 1.5                 // factor above avg for finding peaks
+#define VOL_AVG_SCALE 0.01 * 30 / FPS       // exponential moving averaging scale factor for calculating running avg of volume
+#define VOL_THRESH_DB -65                   // threshold below which we shouldn't update LEDs as FFT data may not be reliable
 #define FFT_FIXED_MAX_VAL 0.0014 * VOL_MULT // value to use when not volume scaling
 
 // Audio bands for vertical bar visualizations
@@ -137,13 +137,13 @@ enum AudioSubMode {
 #define NUM_AUDIO_BANDS 16
 
 // Audio LED settings
-#define BRIGHT_LEVELS 255 // number of levels of brightness to use
-#define MIN_BRIGHT_FADE 0 // Cut-off as we fade (this is a 5 in the gamma table)
-#define MIN_BRIGHT_UPDATE 32 // Cut-off for new values (this is a 5 in the gamma table)
-#define FADE BRIGHT_LEVELS / 32 * 30 / FPS // Rate at which LEDs will fade out (remember, gamma will be applied so fall off will seem faster).                                                           // Scale by FPS so that the fade speed is always the same.
-#define LED_SMOOTHING 0.75 * 30 / FPS // smoothing factor for updating LEDs
-#define FFT_SCALE_POWER 1.5 // power by which to scale the FFT for LED intensity
-#define PALETTE_CHANGE_RATE 24 // default from https://gist.github.com/kriegsman/1f7ccbbfa492a73c015e
+#define BRIGHT_LEVELS 255                    // number of levels of brightness to use
+#define MIN_BRIGHT_FADE 0                    // Cut-off as we fade (this is a 5 in the gamma table)
+#define MIN_BRIGHT_UPDATE 32                 // Cut-off for new values (this is a 5 in the gamma table)
+#define FADE BRIGHT_LEVELS / 32 * 30 / FPS   // Rate at which LEDs will fade out (remember, gamma will be applied so fall off will seem faster).                                                           // Scale by FPS so that the fade speed is always the same.
+#define LED_SMOOTHING 0.75 * 30 / FPS        // smoothing factor for updating LEDs
+#define FFT_SCALE_POWER 1.5                  // power by which to scale the FFT for LED intensity
+#define PALETTE_CHANGE_RATE 24               // default from https://gist.github.com/kriegsman/1f7ccbbfa492a73c015e
 #define PEAK_DECAY_RATE int(round(FPS / 16)) // rate at which peak decays on vertical bar visualization
 
 // Scrolling grid art
@@ -158,7 +158,7 @@ enum AudioSubMode {
         print("%d\n", micros() - last_micros); \
     }
 
-#define FASTLED_ALLOW_INTERRUPTS 0 // TODO: check if we still need this
+#define FASTLED_ALLOW_INTERRUPTS 0      // TODO: check if we still need this
 #define FASTLED_INTERRUPT_RETRY_COUNT 1 // TODO: check if we still need this
 
 // Gamma curve for perceptual brightness (looks like this is close to gamma=2.8)
